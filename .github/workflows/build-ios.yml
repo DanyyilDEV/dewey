@@ -9,7 +9,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - run: npm install && npm install @capacitor/ios@7
       - run: npx cap add ios
       - name: Permesso fotocamera
         run: /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Serve per scansionare il codice a barre dei libri'" ios/App/App/Info.plist
