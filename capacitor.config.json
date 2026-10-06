@@ -1,0 +1,6 @@
+{
+  "appId": "com.kaze.dewey",
+  "appName": "Dewey",
+  "webDir": "www",
+  "plugins": { "CapacitorHttp": { "enabled": true } }
+}
