@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dewey – Catalogatore di libri</title>
+<style>
+:root{--bg:#eef1f4;--card:#fff;--ink:#16202a;--mute:#5f6b78;--line:#dde2e8;--acc:#1f4e79;--accbg:#e4edf6;--ok:#2d7a4f;--warn:#a65a00;--warnbg:#fff1dc;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#10151b;--card:#19212a;--ink:#e9eef3;--mute:#93a0ad;--line:#2a3541;--acc:#7db3e6;--accbg:#1f2e3f;--ok:#6cc28f;--warn:#f0b062;--warnbg:#3a2c16}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;margin:8px 0 2px;letter-spacing:-.02em}
+header p{margin:0 0 18px;color:var(--mute)}
+nav{display:flex;gap:4px;background:var(--line);padding:4px;border-radius:12px;margin-bottom:16px}
+nav button{flex:1;border:0;background:none;color:var(--mute);padding:10px 4px;border-radius:9px;font:inherit;font-weight:600}
+nav button.on{background:var(--card);color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--mute);margin-bottom:12px}
+input,select{display:block;width:100%;margin-top:4px;padding:12px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.row{display:flex;gap:8px}
+button{font:inherit;font-weight:600;padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:var(--bg);flex:1}
+button.big{width:100%;padding:18px;font-size:1.05rem;display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:12px}
+#rd{border-radius:12px;overflow:hidden;margin-bottom:12px}
+#st{color:var(--mute);margin:8px 2px;min-height:1.4em}
+h3{margin:0 0 2px;font-size:1.05rem}
+.m{margin:0 0 12px;color:var(--mute);font-size:.9rem}
+.dw{display:flex;align-items:center;gap:14px;background:var(--accbg);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.dw b{font-size:2rem;letter-spacing:-.02em;color:var(--acc);font-variant-numeric:tabular-nums}
+.dw strong{display:block}
+.dw small{color:var(--mute)}
+.est .dw{background:var(--warnbg)}.est .dw b{color:var(--warn)}
+.tag{display:inline-block;font-size:.78rem;padding:2px 8px;border-radius:99px;background:var(--accbg);color:var(--acc);margin-bottom:8px}
+.est .tag{background:var(--warnbg);color:var(--warn)}
+.alt{font-size:.85rem;color:var(--mute);margin:-4px 0 12px}
+.sv{width:100%}.sv.done{color:var(--ok);border-color:var(--ok)}
+.li{display:flex;gap:12px;align-items:center}
+.li b{font-size:1.3rem;color:var(--acc);min-width:76px;font-variant-numeric:tabular-nums}
+.li div{flex:1;min-width:0}.li span{display:block;color:var(--mute);font-size:.85rem}
+.li button{padding:6px 10px;color:var(--mute)}
+.empty{text-align:center;color:var(--mute);padding:28px 8px}
+.pick{width:100%;text-align:left;margin-bottom:6px;font-weight:500}
+details summary{cursor:pointer;color:var(--mute);margin:4px 2px 10px}
+</style>
+</head>
+<body>
+<main>
+<header><h1>Dewey</h1><p>Scansiona un libro e trova il suo numero Dewey.</p></header>
+<nav><button id="t1" class="on">Libro</button><button id="t2">Codice Dewey</button><button id="t3">Libreria <span id="cnt"></span></button></nav>
+
+<section id="s1">
+  <button class="pri big" id="sc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 8v8M11 8v8M15 8v8M18 8v8"/></svg>Scansiona codice a barre</button>
+  <div id="rd" hidden></div>
+  <button id="cn" hidden class="big" style="margin-top:-4px">Annulla scansione</button>
+  <div class="card">
+    <label>ISBN<input id="is" inputmode="numeric" autocomplete="off" placeholder="978…"></label>
+    <label>Titolo<input id="ti" autocomplete="off"></label>
+    <label>Autore<input id="au" autocomplete="off"></label>
+    <button class="pri" id="go" style="width:100%">Cerca</button>
+  </div>
+  <p id="st" role="status"></p>
+  <div id="res"></div>
+</section>
+
+<section id="s2" hidden>
+  <div class="card">
+    <label>Numero Dewey o parola<input id="dq" autocomplete="off" placeholder="es. 185, 82 oppure filosofia"></label>
+    <button class="pri" id="dg" style="width:100%">Cerca</button>
+  </div>
+  <div id="dr"></div>
+</section>
+
+<section id="s3" hidden>
+  <div class="row" style="margin-bottom:12px"><button id="ex">Esporta CSV</button></div>
+  <div id="lib"></div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+const C=["Informatica, informazione e opere generali","Filosofia e psicologia","Religione","Scienze sociali","Lingue","Scienze pure","Tecnologia e scienze applicate","Arti e tempo libero","Letteratura","Storia e geografia"];
+const D=("Informatica e opere generali|Bibliografia|Biblioteconomia e scienze dell'informazione|Enciclopedie generali|Non assegnato|Periodici generali|Associazioni e musei|Giornalismo ed editoria|Raccolte generali|Manoscritti e libri rari|"+
+"Filosofia e psicologia|Metafisica|Epistemologia|Parapsicologia e occulto|Scuole filosofiche|Psicologia|Logica|Etica|Filosofia antica e orientale|Filosofia occidentale moderna|"+
+"Religione|Filosofia della religione|Bibbia|Cristianesimo e teologia|Teologia morale e devozionale|Chiesa locale e ordini religiosi|Teologia sociale|Storia del cristianesimo|Confessioni cristiane|Altre religioni|"+
+"Scienze sociali|Statistica|Scienze politiche|Economia|Diritto|Pubblica amministrazione e scienza militare|Problemi e servizi sociali|Educazione|Commercio e trasporti|Costumi e folclore|"+
+"Lingue|Linguistica|Inglese|Tedesco|Francese|Italiano e rumeno|Spagnolo e portoghese|Latino|Greco classico|Altre lingue|"+
+"Scienze pure|Matematica|Astronomia|Fisica|Chimica|Scienze della terra|Paleontologia|Biologia|Botanica|Zoologia|"+
+"Tecnologia|Medicina e salute|Ingegneria|Agricoltura|Economia domestica|Gestione aziendale|Ingegneria chimica|Manifattura|Manifattura per usi specifici|Edilizia|"+
+"Arti|Urbanistica e paesaggio|Architettura|Scultura|Disegno e arti decorative|Pittura|Grafica e stampe|Fotografia|Musica|Sport, giochi e spettacolo|"+
+"Letteratura|Letteratura americana|Letteratura inglese|Letteratura tedesca|Letteratura francese|Letteratura italiana e rumena|Letteratura spagnola e portoghese|Letteratura latina|Letteratura greca classica|Altre letterature|"+
+"Storia e geografia|Geografia e viaggi|Biografia e genealogia|Storia antica|Storia d'Europa|Storia d'Asia|Storia d'Africa|Storia del Nord America|Storia del Sud America|Altre aree").split("|");
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const info=v=>{const m=String(v??"").replace("/","").match(/^\W*(\d{3}(?:\.\d+)?)/);if(!m)return null;const d=+m[1].slice(0,3);return{n:m[1],c:C[d/100|0],d:D[d/10|0]}};
+const pick=a=>{const l=(a||[]).map(info).filter(Boolean);if(!l.length)return null;const c={};l.forEach(x=>c[x.n]=(c[x.n]||0)+1);return l.sort((x,y)=>c[y.n]-c[x.n])[0]};
+const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w=>w.length>2);
+const sim=(a,b)=>{const x=new Set(norm(a)),y=new Set(norm(b));if(!x.size||!y.size)return 0;let n=0;x.forEach(w=>y.has(w)&&n++);return n/Math.min(x.size,y.size)};
+const num=v=>String(v).padStart(3,"0");
+
+/* ---- ISBN ---- */
+function isbn13(s){
+  s=s.replace(/[^\dXx]/g,"").toUpperCase();
+  if(s.length===13&&/^97[89]/.test(s))return s;
+  if(s.length===10){const b="978"+s.slice(0,9);let t=0;[...b].forEach((c,i)=>t+=c*(i%2?3:1));return b+(10-t%10)%10}
+  return null;
+}
+
+/* ---- fonti (nessun login) ---- */
+let LOG=[];
+const PROXY="https://dewey-proxy.sarakula-daniele.workers.dev"; // per iPhone/web: indirizzo del proxy, es. "https://dewey-proxy.tuonome.workers.dev" (senza / finale)
+const via=u=>PROXY+"/p?u="+encodeURIComponent(u);
+async function F(u,json=true){
+  let r;
+  try{r=await fetch(u)}
+  catch(e){try{r=await fetch(via(u));if(r.status===404)throw 0}catch(e2){throw new Error("richiesta bloccata o servizio non raggiungibile (da browser avvia server.py)")}}
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  return json?r.json():r.text();
+}
+const J=u=>F(u);
+async function T(name,fn,empty){
+  try{const r=await fn();LOG.push(name+": "+(Array.isArray(r)?`${r.length} risultati, ${r.filter(x=>pick(x.ddc)).length} con Dewey`:r?"ok":"nessun dato"));return r}
+  catch(e){LOG.push(name+": "+e.message);return empty}
+}
+const olIsbn=async isbn=>{
+  const r=await J(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`),b=r["ISBN:"+isbn];
+  return b?[{t:b.title,a:(b.authors||[]).map(x=>x.name).join(", "),y:b.publish_date,ddc:b.classifications?.dewey_decimal_class||[],s:(b.subjects||[]).map(x=>x.name).join(" "),src:"Open Library"}]:[];
+};
+const olEd=async isbn=>{const b=await J(`https://openlibrary.org/isbn/${isbn}.json`);return[{t:b.title,a:"",y:b.publish_date,ddc:b.dewey_decimal_class||[],s:(b.subjects||[]).join(" "),src:"Open Library"}]};
+const olSearch=async({isbn,title,author})=>{
+  const p=new URLSearchParams({fields:"title,author_name,first_publish_year,ddc,subject",limit:"10"});
+  if(isbn)p.set("isbn",isbn);else{if(title)p.set("title",title);if(author)p.set("author",author)}
+  const r=await J("https://openlibrary.org/search.json?"+p);
+  return r.docs.map(d=>({t:d.title,a:(d.author_name||[]).slice(0,2).join(", "),y:d.first_publish_year,ddc:d.ddc||[],s:(d.subject||[]).slice(0,8).join(" "),src:"Open Library"}));
+};
+const SBN="https://opac.sbn.it/opacmobilegw/";
+function deweyFrom(o){
+  const out=[];
+  (function w(x,f){if(x&&typeof x==="object"){const g=f||(!Array.isArray(x)&&Object.values(x).some(v=>typeof v==="string"&&/dewey|\bcdd\b/i.test(v)));for(const [k,v] of Object.entries(x))w(v,g||/dewey/i.test(k))}else if(f){const i=info(x);if(i)out.push(i.n)}})(o,false);
+  if(!out.length){const m=JSON.stringify(o).match(/dewey[^0-9]{0,60}(\d{3}(?:\.\d+)?)/i);if(m)out.push(m[1])}
+  return out;
+}
+const i10=i=>{const b=i.slice(3,12);let t=0;[...b].forEach((c,k)=>t+=c*(10-k));const r=(11-t%11)%11;return b+(r===10?"X":r)};
+const sbn=async({isbn,q,verify})=>{
+  const out=[],v=verify||isbn;let seen=0;
+  const s=await J(SBN+"search.json?"+(isbn?"isbn="+isbn:"any="+encodeURIComponent(q))+"&rows=5");
+  for(const r of (s.briefRecords||[]).slice(0,v?5:3)){
+    const bid=r.codiceIdentificativo||r.bid;if(!bid)continue;
+    const f=await J(SBN+"full.json?bid="+encodeURIComponent(bid));seen++;
+    if(v){const z=JSON.stringify(f).replace(/[-\s]/g,"");if(!z.includes(v)&&!z.includes(i10(v)))continue}
+    const d=deweyFrom(f);
+    if(!d.length)LOG.push("SBN campi del record: "+Object.keys(f).slice(0,30).join(", "));
+    out.push({t:f.titolo||r.titolo||"",a:f.autorePrincipale||r.autorePrincipale||"",y:"",ddc:d,s:"",src:"SBN (catalogo italiano)"});
+  }
+  if(v&&!out.length)LOG.push(`SBN: ${seen} record scartati perché non contengono questo ISBN`);
+  return out;
+};
+const sbnUni=async isbn=>{
+  const x=await F(`https://opac.sbn.it/sbn3.0/opaclib?db=solr_iccu&select_db=solr_iccu&do_cmd=search_show_cmd&format=unimarc&rpnlabel=+ISBN+%3D+${isbn}+%28parole+in+AND%29+&rpnquery=%40attrset+bib-1++%40attr+1%3D7+%40attr+4%3D6+%22${isbn}%22&totalResult=1&fname=none`,false);
+  const m=x.match(/676[\s\S]{0,300}?(?:code="a"[^>]*>|\$a|\^a)\s*(\d{3}(?:\.\d+)?)/)||x.match(/dewey[^0-9]{0,60}(\d{3}(?:\.\d+)?)/i);
+  return m?[{t:"",a:"",y:"",ddc:[m[1]],s:"",src:"SBN (catalogo italiano)"}]:[];
+};
+const loc=async isbn=>{
+  const x=await F(`http://lx2.loc.gov:210/LCDB?version=1.1&operation=searchRetrieve&query=bath.isbn%3D${isbn}&maximumRecords=1&recordSchema=mods`,false);
+  const m=[...x.matchAll(/<classification[^>]*authority="ddc"[^>]*>([^<]+)</g)].map(v=>v[1]);
+  return m.length?[{t:"",a:"",y:"",ddc:m,s:"",src:"Library of Congress"}]:[];
+};
+const gb=async q=>{
+  const r=await J("https://www.googleapis.com/books/v1/volumes?maxResults=3&q="+encodeURIComponent(q)),v=r.items?.[0]?.volumeInfo;
+  return v?{t:v.title,a:(v.authors||[]).join(", "),cats:(v.categories||[]).join(" "),desc:(v.description||"").slice(0,300),lang:v.language}:null;
+};
+
+/* ---- stima dall'argomento (solo se nessun catalogo ha il Dewey) ---- */
+const K=[[/aristotel/,"185"],[/platon|plato/,"184"],[/kant|hegel|nietzsche|schopenhauer|heidegger/,"193"],[/metafisic/,"110"],[/logic/,"160"],[/etic[ao]|ethic|moral/,"170"],[/psicolog|psycholog|psicoanali/,"150"],[/filosof|philosoph/,"100"],
+[/bibbia|bible|vangel|gospel/,"220"],[/cristian|chiesa|church|christian|teolog|theolog/,"230"],[/religion|religione|islam|buddh|induis|hindu/,"200"],
+[/democra|politic|stato\b|state\b/,"320"],[/econom/,"330"],[/diritto|law\b|legal|giuridic/,"340"],[/educazion|pedagog|didatt|education/,"370"],[/sociolog|social/,"300"],[/antropolog|folclor|folklore|costum/,"390"],[/statistic/,"310"],
+[/programm|software|python|javascript|coding/,"005"],[/comput|informatic|internet|\bweb\b/,"004"],
+[/grammatic|linguistic|lingua|language|dizionari|dictionar/,"400"],
+[/matematic|math|algebra|geometr/,"510"],[/astronom|cosmo|universo/,"520"],[/fisic|physics|quantist|quantum/,"530"],[/chimic|chemis/,"540"],[/geolog|clima|meteo|earth science/,"550"],[/biolog|evoluz|evolution|genetic|dna/,"570"],[/botanic|piante|plants|giardin/,"580"],[/zoolog|animali|animals|uccelli|birds/,"590"],
+[/cucina|cooking|ricett|recipe|food/,"641"],[/medic|salute|health|disease|malatt|cancer|dieta|nutri/,"610"],[/ingegner|engineer/,"620"],[/agricol|farming|coltiv/,"630"],[/gestione|management|business|marketing|impresa|leadership/,"650"],
+[/architettur/,"720"],[/scultur/,"730"],[/fotograf|photograph/,"770"],[/pittur|painting/,"750"],[/design|moda\b|fashion|disegno/,"740"],[/music/,"780"],[/cinema|film|sport|calcio|scacchi|chess|giochi|games/,"790"],[/\barte\b|\bart\b/,"700"],
+[/biograf|memoir|autobiograf|diario/,"920"],[/geograf|viaggi|travel|guida\b|guide\b/,"910"],[/storia antica|ancient history|roma antica|egitt|grecia antica/,"930"],[/medioev|rinascimento|guerra|\bwar\b|europ/,"940"],[/storia|history/,"900"],
+[/poesi|poetry|poem/,"L1"],[/romanz|novel|fiction|narrativ|racconti|thriller|giallo|fantasy|fantascienza/,"L3"],[/dramma|theatre|theater|teatro/,"L2"],[/saggi|essays/,"L4"]];
+const LIT={it:"85",en:"82",fr:"84",de:"83",es:"86"};
+function estimate(text,lang){
+  text=text.toLowerCase();const sc={};
+  for(const [re,d] of K)if(re.test(text))sc[d]=(sc[d]||0)+1;
+  const best=Object.entries(sc).sort((a,b)=>b[1]-a[1])[0];if(!best)return null;
+  let d=best[0];if(d[0]==="L")d=(LIT[lang]||"89")+d[1];
+  return d;
+}
+
+/* ---- ricerca ---- */
+async function lookup({isbn,title,author}){
+  LOG=[];const say=t=>$("#st").textContent=t;say("Cerco nei cataloghi…");
+  const q=[title,author].filter(Boolean).join(" ");
+  const jobs=isbn?[T("Open Library (ISBN)",()=>olIsbn(isbn),[]),T("Open Library (edizione)",()=>olEd(isbn),[]),T("Open Library (ricerca)",()=>olSearch({isbn}),[]),T("SBN",()=>sbn({isbn}),[]),T("SBN (ricerca libera)",()=>sbn({q:isbn,verify:isbn}),[]),T("SBN (UNIMARC)",()=>sbnUni(isbn),[]),T("Library of Congress",()=>loc(isbn),[])]
+    :[T("Open Library",()=>olSearch({title,author}),[]),T("SBN",()=>sbn({q}),[])];
+  const gbp=T("Google Books",()=>gb(isbn?"isbn:"+isbn:`intitle:${title}`+(author?`+inauthor:${author}`:"")),null);
+  const res=await Promise.all(jobs),meta=await gbp;
+  let all=res.flat().map(x=>({...x,exact:!!isbn}));
+  const ref=title||meta?.t||"";
+  if(!all.some(x=>pick(x.ddc))&&isbn&&meta?.t){
+    say("Provo con titolo e autore…");
+    const [a2,b2]=await Promise.all([T("SBN (per titolo)",()=>sbn({q:meta.t+" "+meta.a}),[]),T("Open Library (per titolo)",()=>olSearch({title:meta.t,author:meta.a}),[])]);
+    all=[...all,...[...b2,...a2].map(x=>({...x,exact:false}))];
+  }
+  const seen=new Set();
+  let c=all.map(x=>({...x,t:x.t||meta?.t||title||"(senza titolo)",a:x.a||meta?.a||author||"",i:pick(x.ddc)}))
+    .filter(x=>x.i&&(x.exact||sim(x.t,ref)>=0.6))
+    .filter(x=>{const k=x.t+x.i.n;if(seen.has(k))return false;seen.add(k);return true})
+    .sort((x,y)=>y.exact-x.exact).slice(0,5);
+  const dropped=all.filter(x=>pick(x.ddc)).length-c.length;
+  if(dropped>0)LOG.push(`Scartati ${dropped} risultati con Dewey ma titolo diverso da "${ref}"`);
+  if(!c.length){
+    const e=estimate([title,author,meta?.t,meta?.a,meta?.cats,meta?.desc,...all.map(x=>x.s)].join(" "),meta?.lang);
+    if(e)c=[{t:meta?.t||title||"(senza titolo)",a:meta?.a||author||"",ddc:[e],i:info(e),est:true,src:"Stima dall'argomento"}];
+  }
+  return {c,meta};
+}
+const diag=()=>`<details><summary>Dettagli della ricerca</summary><div class="card m">${LOG.map(esc).join("<br>")}</div></details>`;
+
+let R=[];
+function show(c){
+  const manual=`<details ${c.length?"":"open"}><summary>${c.length?"Non è quello giusto? Scegli a mano":"Scegli la categoria a mano"}</summary><div class="card"><label>Categoria<select id="man">${D.map((n,i)=>`<option value="${num(i*10)}">${num(i*10)} – ${esc(n)}</option>`).join("")}</select></label><button class="sv pri" data-m="1">Salva in libreria</button></div></details>`;
+  R=c;
+  $("#res").innerHTML=c.map((o,k)=>{
+    const alt=o.ddc.map(info).filter(Boolean).map(x=>x.n).filter(n=>n!==o.i.n);
+    return `<article class="card ${o.est?"est":""}"><span class="tag">${o.est?"Stima da verificare":"Fonte: "+esc(o.src)+(o.exact?"":" · stesso titolo, altra edizione")}</span><h3>${esc(o.t)}</h3><p class="m">${esc([o.a,o.y].filter(Boolean).join(", "))}</p>
+    <div class="dw"><b>${o.i.n}</b><span><strong>${esc(o.i.d)}</strong><small>Classe ${o.i.n[0]}00 – ${esc(o.i.c)}</small></span></div>
+    ${alt.length?`<p class="alt">Altre edizioni: ${alt.slice(0,4).join(", ")}</p>`:""}
+    <button class="sv" data-k="${k}">Salva in libreria</button></article>`}).join("")+manual+diag();
+  if(!c.length)$("#st").textContent="Nessun numero Dewey trovato.";
+}
+async function run(args){
+  $("#res").innerHTML="";
+  try{const {c,meta}=await lookup(args);
+    if(c.length)$("#st").textContent="";
+    if(meta){if(!$("#ti").value)$("#ti").value=meta.t||"";if(!$("#au").value)$("#au").value=meta.a||""}
+    show(c);
+  }catch(e){$("#st").textContent="Errore di rete. Controlla la connessione e riprova."}
+}
+$("#go").onclick=()=>{
+  const raw=$("#is").value.trim(),isbn=raw?isbn13(raw):null,title=$("#ti").value.trim(),author=$("#au").value.trim();
+  if(raw&&!isbn)return $("#st").textContent="ISBN non valido: servono 10 o 13 cifre.";
+  if(!isbn&&!title)return $("#st").textContent="Inserisci un ISBN oppure almeno il titolo.";
+  run({isbn,title,author});
+};
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("#is,#ti,#au"))$("#go").click();if(e.key==="Enter"&&e.target.id==="dq")$("#dg").click()});
+
+/* ---- scanner dal vivo ---- */
+let H=null;
+async function stopScan(){if(H){try{await H.stop()}catch(e){}H=null}$("#rd").hidden=$("#cn").hidden=true}
+$("#sc").onclick=async()=>{
+  if(H)return;$("#res").innerHTML="";$("#st").textContent="";
+  $("#rd").hidden=$("#cn").hidden=false;
+  try{
+    H=new Html5Qrcode("rd",{formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13],verbose:false});
+    await H.start({facingMode:"environment"},{fps:10,qrbox:{width:260,height:130}},async t=>{
+      const i=isbn13(t);if(!i)return;
+      await stopScan();$("#is").value=i;$("#ti").value=$("#au").value="";run({isbn:i});
+    },()=>{});
+    $("#st").textContent="Inquadra il codice a barre sul retro del libro.";
+  }catch(e){await stopScan();$("#st").textContent="Fotocamera non disponibile. Concedi il permesso oppure inserisci l'ISBN a mano."}
+};
+$("#cn").onclick=()=>{stopScan();$("#st").textContent=""};
+
+/* ---- libreria ---- */
+let lib=[];try{lib=JSON.parse(localStorage.dewey||"[]")}catch(e){}
+const persist=()=>{try{localStorage.dewey=JSON.stringify(lib)}catch(e){}$("#cnt").textContent=lib.length?"("+lib.length+")":"";renderLib()};
+$("#res").onclick=e=>{
+  const b=e.target.closest(".sv");if(!b||b.classList.contains("done"))return;
+  let rec;
+  if(b.dataset.m){const n=$("#man").value,i=info(n);rec={t:$("#ti").value.trim()||"Senza titolo",a:$("#au").value.trim(),n,c:i.c,d:i.d}}
+  else{const o=R[+b.dataset.k];rec={t:o.t,a:o.a,n:o.i.n,c:o.i.c,d:o.i.d}}
+  lib.unshift(rec);persist();b.textContent="Salvato";b.classList.add("done");
+};
+function renderLib(){
+  const s=lib.map((r,i)=>({...r,i})).sort((a,b)=>parseFloat(a.n)-parseFloat(b.n));
+  $("#lib").innerHTML=s.length?s.map(r=>`<div class="card li"><b>${r.n}</b><div><strong>${esc(r.t)}</strong><span>${esc(r.a)}</span><span>${esc(r.d)}</span></div><button data-r="${r.i}" aria-label="Elimina">✕</button></div>`).join(""):`<div class="empty">Nessun libro salvato.</div>`;
+}
+$("#lib").onclick=e=>{const b=e.target.closest("[data-r]");if(b&&confirm("Eliminare questo libro?")){lib.splice(+b.dataset.r,1);persist()}};
+$("#ex").onclick=async()=>{
+  if(!lib.length)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const csv="\ufeffDewey,Categoria,Classe,Titolo,Autore\n"+lib.map(r=>[r.n,r.d,r.c,r.t,r.a].map(q).join(",")).join("\n");
+  const f=new File([csv],"libreria-dewey.csv",{type:"text/csv"});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});return}catch(_){}}
+  const a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;a.click();
+};
+
+/* ---- cerca per codice Dewey o parola ---- */
+const dline=(n,t,sub)=>`<button class="pick card" data-q="${n}"><b style="color:var(--acc)">${n}</b> &nbsp;${esc(t)}${sub?`<br><small style="color:var(--mute)">${esc(sub)}</small>`:""}</button>`;
+function dewey(){
+  const q=$("#dq").value.trim().toLowerCase(),out=$("#dr");if(!q){out.innerHTML="";return}
+  if(/^\d/.test(q)){
+    const d=q.replace(/\D/g,"");
+    if(d.length===1){out.innerHTML=`<div class="card"><h3>Classe ${d}00</h3><p class="m">${esc(C[d])}</p></div>`+D.slice(d*10,d*10+10).map((t,i)=>dline(num(d*100+i*10),t)).join("");return}
+    const n=d.length===2?d+"0":d.slice(0,3)+(d.length>3?"."+d.slice(3):""),i=info(n);
+    out.innerHTML=`<div class="card"><div class="dw"><b>${i.n}</b><span><strong>${esc(i.d)}</strong><small>Classe ${i.n[0]}00 – ${esc(i.c)}</small></span></div>
+    <p class="m" style="margin:0">Il nome mostrato è quello della divisione (${num(+i.n.slice(0,2)*10)}). Le cifre successive precisano l'argomento.</p></div>`+
+    `<p class="m">Altre divisioni della classe ${i.n[0]}00</p>`+D.slice(i.n[0]*10,i.n[0]*10+10).map((t,k)=>dline(num(i.n[0]*100+k*10),t)).join("");
+    return;
+  }
+  const hit=[];C.forEach((t,i)=>{if(t.toLowerCase().includes(q))hit.push(dline(num(i*100),t,"Classe principale"))});
+  D.forEach((t,i)=>{if(i%10&&t.toLowerCase().includes(q))hit.push(dline(num(i*10),t,"Classe "+(i/10|0)+"00 – "+C[i/10|0]))});
+  out.innerHTML=hit.length?hit.join(""):`<div class="empty">Nessuna categoria contiene “${esc(q)}”.</div>`;
+}
+$("#dg").onclick=dewey;
+$("#dr").onclick=e=>{const b=e.target.closest("[data-q]");if(b){$("#dq").value=b.dataset.q;dewey()}};
+
+/* ---- schede ---- */
+const tab=n=>{[1,2,3].forEach(i=>{$("#s"+i).hidden=i!==n;$("#t"+i).classList.toggle("on",i===n)});if(n!==1)stopScan()};
+[1,2,3].forEach(i=>$("#t"+i).onclick=()=>tab(i));
+persist();
+</script>
+</body>
+</html>
